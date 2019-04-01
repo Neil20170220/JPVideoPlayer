@@ -524,10 +524,18 @@ didReceiveLoadingRequestTask:(JPResourceLoadingRequestWebTask *)requestTask {
                 break;
 
             case AVPlayerItemStatusFailed:{
-                [self stopCheckBufferingTimerIfNeed];
-                self.playerStatus = JPVideoPlayerStatusFailed;
-                [self callDelegateMethodWithError:JPErrorWithDescription(@"AVPlayerItemStatusFailed")];
-                [self callPlayerStatusDidChangeDelegateMethod];
+                /// !!!  在 KVO 处理的过程中不能移除 KVO, 否则崩溃.
+                /**
+                 `[self callDelegateMethodWithError:JPErrorWithDescription(@"AVPlayerItemStatusFailed")];`
+                 这句最终会调用到 -[JPVideoPlayerModel reset], 会移除 KVO, 导致崩溃
+                 异步处理
+                 */
+                dispatch_async(dispatch_get_main_queue(), ^(void){
+                    [self stopCheckBufferingTimerIfNeed];
+                    self.playerStatus = JPVideoPlayerStatusFailed;
+                    [self callDelegateMethodWithError:JPErrorWithDescription(@"AVPlayerItemStatusFailed")];
+                    [self callPlayerStatusDidChangeDelegateMethod];
+                });
             }
                 break;
 
