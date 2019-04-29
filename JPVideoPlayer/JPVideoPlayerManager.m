@@ -623,7 +623,12 @@ shouldResumePlaybackWhenApplicationDidBecomeActiveFromResignActiveForURL:self.ma
             configurationCompletion:(JPPlayVideoConfiguration)configurationCompletion {
     JPDebugLog(@"Start play a local video: %@", url);
     // local file.
-    NSString *path = [url.absoluteString stringByReplacingOccurrencesOfString:@"file://" withString:@""];
+    NSString *path = nil;
+    if ([url isFileURL]) {
+        path = [url path];
+    } else {
+        path = [url absoluteString];
+    }
     if ([[NSFileManager defaultManager] fileExistsAtPath:path] || ![path containsString:NSHomeDirectory()]) {
         /// if file not in sandbox and system version < 11.0, `[[NSFileManager defaultManager] fileExistsAtPath:path]` return NO
         /// maybe in Photos.app, try play it.
