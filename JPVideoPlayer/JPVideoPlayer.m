@@ -321,6 +321,11 @@ static NSString *JPVideoPlayerURL = @"www.newpan.com";
     if(!CMTIME_IS_VALID(time)){
         return;
     }
+    /// AVPlayerItem cannot service a seek request with a completion handler until its status is AVPlayerItemStatusReadyToPlay.
+    if (self.playerModel.player.status != AVPlayerStatusReadyToPlay ||
+        self.playerModel.playerItem.status != AVPlayerStatusReadyToPlay) {
+        return;
+    }
     __weak typeof(self) wself = self;
     [self.playerModel.player seekToTime:time completionHandler:^(BOOL finished) {
 
@@ -382,6 +387,11 @@ static NSString *JPVideoPlayerURL = @"www.newpan.com";
         return;
     }
     if(!CMTIME_IS_VALID(time)){
+        return;
+    }
+    /// AVPlayerItem cannot service a seek request with a completion handler until its status is AVPlayerItemStatusReadyToPlay.
+    if (self.playerModel.player.status != AVPlayerStatusReadyToPlay ||
+        self.playerModel.playerItem.status != AVPlayerStatusReadyToPlay) {
         return;
     }
     BOOL needResume = self.playerModel.player.rate != 0;
@@ -649,6 +659,11 @@ static BOOL _isOpenAwakeWhenBuffering = NO;
 #pragma mark - Private
 
 - (void)seekToHeaderThenStartPlayback {
+    /// AVPlayerItem cannot service a seek request with a completion handler until its status is AVPlayerItemStatusReadyToPlay.
+    if (self.playerModel.player.status != AVPlayerStatusReadyToPlay ||
+        self.playerModel.playerItem.status != AVPlayerStatusReadyToPlay) {
+        return;
+    }
     // Seek the start point of file data and repeat play, this handle have no memory surge.
     __weak typeof(self.playerModel) weak_Item = self.playerModel;
     [self.playerModel.player seekToTime:CMTimeMake(0, 1) completionHandler:^(BOOL finished) {
