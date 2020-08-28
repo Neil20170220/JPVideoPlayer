@@ -70,16 +70,20 @@ static const NSString *kJPVideoPlayerCacheFileResponseHeadersKey = @"com.newpan.
         pthread_mutexattr_init(&mutexattr);
         pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE);
         pthread_mutex_init(&_lock, &mutexattr);
-
+        
         NSString *indexStr = [NSString stringWithContentsOfFile:self.indexFilePath encoding:NSUTF8StringEncoding error:nil];
         NSData *data = [indexStr dataUsingEncoding:NSUTF8StringEncoding];
-        NSDictionary *indexDictionary = [NSJSONSerialization JSONObjectWithData:data
-                                                                 options:NSJSONReadingMutableContainers | NSJSONReadingAllowFragments
-                                                                   error:nil];
+        NSDictionary *indexDictionary = nil;
+        /// data = nil 导致闪退
+        if (data) {
+            indexDictionary = [NSJSONSerialization JSONObjectWithData:data
+                                                              options:(NSJSONReadingMutableContainers | NSJSONReadingAllowFragments)
+                                                                error:nil];
+        }
         if (![self serializeIndex:indexDictionary]) {
             [self truncateFileWithFileLength:0];
         }
-
+        
         [self checkIsCompleted];
     }
     return self;
