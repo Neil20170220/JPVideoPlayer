@@ -445,11 +445,19 @@ static const NSString *kJPVideoPlayerCacheFileResponseHeadersKey = @"com.newpan.
 }
 
 - (BOOL)synchronize {
+    __block BOOL synchronize = NO;
     NSString *indexString = [self unserializeIndex];
     int lock = pthread_mutex_trylock(&_lock);
     JPDebugLog(@"Did synchronize index file");
-    [self.writeFileHandle synchronizeFile];
-    BOOL synchronize = [indexString writeToFile:self.indexFilePath atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+    @try {
+        [self.writeFileHandle synchronizeFile];
+        synchronize = [indexString writeToFile:self.indexFilePath
+                                    atomically:YES
+                                      encoding:NSUTF8StringEncoding
+                                         error:NULL];
+    } @catch (NSException *exception) {
+        JPErrorLog(@"%@", exception);
+    }
     if (!lock) {
         pthread_mutex_unlock(&_lock);
     }
