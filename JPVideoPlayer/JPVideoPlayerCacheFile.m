@@ -99,8 +99,9 @@ static const NSString *kJPVideoPlayerCacheFileResponseHeadersKey = @"com.newpan.
 #pragma mark - Properties
 
 - (NSUInteger)cachedDataBound {
-    if (self.internalFragmentRanges.count > 0) {
-        NSRange range = [[self.internalFragmentRanges lastObject] rangeValue];
+    NSArray *fragmentRanges = [self.internalFragmentRanges copy];
+    if (fragmentRanges.count > 0) {
+        NSRange range = [[fragmentRanges lastObject] rangeValue];
         return NSMaxRange(range);
     }
     return 0;
@@ -125,7 +126,7 @@ static const NSString *kJPVideoPlayerCacheFileResponseHeadersKey = @"com.newpan.
 #pragma mark - Range
 
 - (NSArray<NSValue *> *)fragmentRanges {
-    return self.internalFragmentRanges;
+    return [self.internalFragmentRanges copy];
 }
 
 - (void)mergeRangesIfNeed {
@@ -198,9 +199,13 @@ static const NSString *kJPVideoPlayerCacheFileResponseHeadersKey = @"com.newpan.
     }
 
     int lock = pthread_mutex_trylock(&_lock);
-    for (int i = 0; i < self.internalFragmentRanges.count; ++i) {
-        NSRange range = [self.internalFragmentRanges[i] rangeValue];
+    NSArray *fragmentRanges = [self.internalFragmentRanges copy];
+    for (int i = 0; i < fragmentRanges.count; ++i) {
+        NSRange range = [fragmentRanges[i] rangeValue];
         if (NSLocationInRange(position, range)) {
+            if (!lock) {
+                pthread_mutex_unlock(&_lock);
+            }
             return range;
         }
     }
@@ -218,8 +223,9 @@ static const NSString *kJPVideoPlayerCacheFileResponseHeadersKey = @"com.newpan.
     int lock = pthread_mutex_trylock(&_lock);
     NSRange targetRange = JPInvalidRange;
     NSUInteger start = position;
-    for (int i = 0; i < self.internalFragmentRanges.count; ++i) {
-        NSRange range = [self.internalFragmentRanges[i] rangeValue];
+    NSArray *fragmentRanges = [self.internalFragmentRanges copy];
+    for (int i = 0; i < fragmentRanges.count; ++i) {
+        NSRange range = [fragmentRanges[i] rangeValue];
         if (NSLocationInRange(start, range)) {
             start = NSMaxRange(range);
         }
@@ -245,8 +251,9 @@ static const NSString *kJPVideoPlayerCacheFileResponseHeadersKey = @"com.newpan.
 - (void)checkIsCompleted {
     int lock = pthread_mutex_trylock(&_lock);
     self.completed = NO;
-    if (self.internalFragmentRanges && self.internalFragmentRanges.count == 1) {
-        NSRange range = [self.internalFragmentRanges[0] rangeValue];
+    NSArray *fragmentRanges = [self.internalFragmentRanges copy];
+    if (fragmentRanges && fragmentRanges.count == 1) {
+        NSRange range = [fragmentRanges[0] rangeValue];
         if (range.location == 0 && (range.length == self.fileLength)) {
             self.completed = YES;
         }
@@ -417,7 +424,8 @@ static const NSString *kJPVideoPlayerCacheFileResponseHeadersKey = @"com.newpan.
     } mutableCopy];
 
     NSMutableArray *rangeArray = [[NSMutableArray alloc] init];
-    for (NSValue *range in self.internalFragmentRanges) {
+    NSArray *fragmentRanges = [self.internalFragmentRanges copy];
+    for (NSValue *range in fragmentRanges) {
         [rangeArray addObject:NSStringFromRange([range rangeValue])];
     }
     if(rangeArray.count){
