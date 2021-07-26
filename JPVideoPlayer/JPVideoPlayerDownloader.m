@@ -100,14 +100,12 @@
 }
 
 - (void)cancel {
-    int lock = pthread_mutex_trylock(&_lock);
+    pthread_mutex_lock(&_lock);
     if (self.runningTask) {
         [self.runningTask cancel];
         [self reset];
     }
-    if (!lock) {
-        pthread_mutex_unlock(&_lock);
-    }
+    pthread_mutex_unlock(&_lock);
 }
 
 

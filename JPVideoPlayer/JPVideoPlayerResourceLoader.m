@@ -39,8 +39,8 @@
 @implementation JPVideoPlayerResourceLoader
 
 - (void)dealloc {
-    if(self.runningRequestTask){
-        [self.runningRequestTask cancel];
+    if(_runningRequestTask){
+        [_runningRequestTask cancel];
         [self removeCurrentRequestTaskAndResetAll];
     }
     self.loadingRequests = nil;
@@ -260,15 +260,13 @@ didCompleteWithError:(NSError *)error {
             [self.delegate resourceLoader:self didReceiveLoadingRequestTask:(JPResourceLoadingRequestWebTask *)task];
         }
     }
-    int lock = pthread_mutex_trylock(&_lock);
+    pthread_mutex_lock(&_lock);
     task.delegate = self;
     if (!self.requestTasks) {
         self.requestTasks = [@[] mutableCopy];
     }
     [self.requestTasks addObject:task];
-    if (!lock) {
-        pthread_mutex_unlock(&_lock);
-    }
+    pthread_mutex_unlock(&_lock);
 }
 
 - (void)removeCurrentRequestTaskAndResetAll {
@@ -278,7 +276,7 @@ didCompleteWithError:(NSError *)error {
 }
 
 - (void)startNextTaskIfNeed {
-    int lock = pthread_mutex_trylock(&_lock);;
+    pthread_mutex_lock(&_lock);
     self.runningRequestTask = self.requestTasks.firstObject;
     if ([self.runningRequestTask isKindOfClass:[JPResourceLoadingRequestLocalTask class]]) {
         [self.runningRequestTask startOnQueue:self.ioQueue];
@@ -286,9 +284,7 @@ didCompleteWithError:(NSError *)error {
     else {
         [self.runningRequestTask start];
     }
-    if (!lock) {
-        pthread_mutex_unlock(&_lock);
-    }
+    pthread_mutex_unlock(&_lock);
 }
 
 - (NSRange)fetchRequestRangeWithRequest:(AVAssetResourceLoadingRequest *)loadingRequest {

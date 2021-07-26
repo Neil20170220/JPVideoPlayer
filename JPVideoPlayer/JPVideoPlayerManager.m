@@ -142,11 +142,9 @@ static NSString * const JPVideoPlayerSDKVersionKey = @"com.jpvideoplayer.sdk.ver
     self.managerModel.videoURL = url;
     BOOL isFailedUrl = NO;
     if (url) {
-        int lock = pthread_mutex_trylock(&_lock);
+        pthread_mutex_lock(&_lock);
         isFailedUrl = [self.failedURLs containsObject:url];
-        if (!lock) {
-            pthread_mutex_unlock(&_lock);
-        }
+        pthread_mutex_unlock(&_lock);
     }
 
     if (url.absoluteString.length == 0 || (!(options & JPVideoPlayerRetryFailed) && isFailedUrl)) {
@@ -428,25 +426,21 @@ didCompleteWithError:(NSError *)error {
                 && error.code != NSURLErrorDataNotAllowed
                 && error.code != NSURLErrorCannotFindHost
                 && error.code != NSURLErrorCannotConnectToHost) {
-            int lock = pthread_mutex_trylock(&_lock);
+            pthread_mutex_lock(&_lock);
             if(self.managerModel.videoURL){
                 [self.failedURLs addObject:self.managerModel.videoURL];
             }
-            if (!lock) {
-                pthread_mutex_unlock(&_lock);
-            }
+            pthread_mutex_unlock(&_lock);
         }
         [self stopPlay];
     }
     else {
         if ((self.videoPlayer.playerModel.playerOptions & JPVideoPlayerRetryFailed)) {
-            int lock = pthread_mutex_trylock(&_lock);
+            pthread_mutex_lock(&_lock);
             if ([self.failedURLs containsObject:self.managerModel.videoURL]) {
                 [self.failedURLs removeObject:self.managerModel.videoURL];
             }
-            if (!lock) {
-                pthread_mutex_unlock(&_lock);
-            }
+            pthread_mutex_unlock(&_lock);
         }
     }
 }
@@ -539,13 +533,11 @@ shouldResumePlaybackWhenApplicationDidBecomeActiveFromResignActiveForURL:self.ma
 }
 
 - (void)reset {
-    int lock = pthread_mutex_trylock(&_lock);
+    pthread_mutex_lock(&_lock);
     self.managerModel = nil;
     _isReturnWhenApplicationDidEnterBackground = NO;
     _isReturnWhenApplicationWillResignActive = NO;
-    if (!lock) {
-        pthread_mutex_unlock(&_lock);
-    }
+    pthread_mutex_unlock(&_lock);
 }
 
 - (JPVideoPlayerDownloaderOptions)fetchDownloadOptionsWithOptions:(JPVideoPlayerOptions)options {

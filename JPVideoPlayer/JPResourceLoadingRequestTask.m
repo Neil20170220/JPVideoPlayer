@@ -103,31 +103,25 @@ static const NSString *const kJPVideoPlayerContentRangeKey = @"Content-Range";
 }
 
 - (void)start {
-    int lock = pthread_mutex_trylock(&_lock);;
+    pthread_mutex_lock(&_lock);
     self.executing = YES;
-    if (!lock) {
-        pthread_mutex_unlock(&_lock);
-    }
+    pthread_mutex_unlock(&_lock);
 }
 
 - (void)startOnQueue:(dispatch_queue_t)queue {
     dispatch_async(queue, ^{
-        int lock = pthread_mutex_trylock(&_lock);;
+        pthread_mutex_lock(&_lock);;
         self.executing = YES;
-        if (!lock) {
-            pthread_mutex_unlock(&_lock);
-        }
+        pthread_mutex_unlock(&_lock);
     });
 }
 
 - (void)cancel {
     JPDebugLog(@"调用了 RequestTask 的取消方法");
-    int lock = pthread_mutex_trylock(&_lock);;
+    pthread_mutex_lock(&_lock);;
     self.executing = NO;
     self.cancelled = YES;
-    if (!lock) {
-        pthread_mutex_unlock(&_lock);
-    }
+    pthread_mutex_unlock(&_lock);
 }
 
 
@@ -220,7 +214,7 @@ static const NSString *const kJPVideoPlayerContentRangeKey = @"Content-Range";
 
     JPDebugLog(@"开始响应本地请求");
     // task fetch data from disk.
-    int lock = pthread_mutex_trylock(&_plock);
+    pthread_mutex_lock(&_plock);
     NSUInteger offset = self.requestRange.location;
     while (offset < NSMaxRange(self.requestRange)) {
         if ([self isCancelled]) {
@@ -234,14 +228,12 @@ static const NSString *const kJPVideoPlayerContentRangeKey = @"Content-Range";
         }
     }
     JPDebugLog(@"完成本地请求");
-    if (!lock) {
-        pthread_mutex_unlock(&_plock);
-    }
+    pthread_mutex_unlock(&_plock);
     [self requestDidCompleteWithError:nil];
 }
 
 - (void)fillContentInformation {
-    int lock = pthread_mutex_trylock(&_plock);
+    pthread_mutex_lock(&_plock);
     NSMutableDictionary *responseHeaders = [self.cacheFile.responseHeaders mutableCopy];
     BOOL supportRange = responseHeaders[kJPVideoPlayerContentRangeKey] != nil;
     if (supportRange && JPValidByteRange(self.requestRange)) {
@@ -260,9 +252,7 @@ static const NSString *const kJPVideoPlayerContentRangeKey = @"Content-Range";
                                                              HTTPVersion:@"HTTP/1.1"
                                                             headerFields:responseHeaders];
     [self.loadingRequest jp_fillContentInformationWithResponse:response];
-    if (!lock) {
-        pthread_mutex_unlock(&_plock);
-    }
+    pthread_mutex_unlock(&_plock);
 }
 
 @end
@@ -407,7 +397,7 @@ static const NSString *const kJPVideoPlayerContentRangeKey = @"Content-Range";
                               atOffset:self.offset
                            synchronize:NO
                       storedCompletion:completion];
-        int lock = pthread_mutex_trylock(&_plock);
+        pthread_mutex_lock(&_plock);
         self.haveDataSaved = YES;
         self.offset += [data length];
         [self.loadingRequest.dataRequest respondWithData:data];
@@ -420,9 +410,7 @@ static const NSString *const kJPVideoPlayerContentRangeKey = @"Content-Range";
                 _needLog = YES;
             });
         }
-        if (!lock) {
-            pthread_mutex_unlock(&_plock);
-        }
+        pthread_mutex_unlock(&_plock);
     }
 }
 
