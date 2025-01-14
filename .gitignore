@@ -67,4 +67,4 @@ fastlane/screenshots
 
 # scan temporary files
 fastlane/test_output
-Pods/resources-to-copy-beiliao.txt
+Pods
